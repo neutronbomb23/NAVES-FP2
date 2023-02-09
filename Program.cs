@@ -37,14 +37,30 @@ namespace naves
 		{
 			Console.CursorVisible = false;
 			Tunel tunel = new Tunel();
+			Entidad nave = new Entidad();
+
+
+			GrEntidades enemigos= new GrEntidades();
+			enemigos.ent = new Entidad[] { };
+			enemigos.num= 1;
+
+			
+
+			nave.col = ANCHO / 2;
+			nave.fil = ALTO / 2;
 			tunel.ini = 5;
 			IniciaTunel(out tunel);
 			renderTunel(tunel);
+			GeneraEnemigo(ref enemigos, tunel);
 			while (true) 
 			{
+				char c = ' ';
+				c = LeeInput();
+
 				
 				AvanzaTunel(ref tunel);
-				renderTunel(tunel);
+				AvanzaNave(c, ref nave);
+				Render(tunel, nave);
 			
 				Thread.Sleep(200);
 			}
@@ -142,7 +158,7 @@ namespace naves
 				gr.num++;
 			}
 			else
-			{
+			{	
 				Console.SetCursorPosition(0, 20);
 				Console.WriteLine("No se pueden añadir más entidades");
 			}
@@ -163,11 +179,11 @@ namespace naves
 		
 		static void AvanzaNave(char ch, ref Entidad nave) 
 		{
-			if (ch == 'l' && nave.col < 0) 
+			if (ch == 'l' && nave.col > 0) 
 			{
 				nave.col--;
 			}
-			else if(ch == 'r' && nave.col > ANCHO - 1) 
+			else if(ch == 'r' && nave.col < ANCHO - 1) 
 			{
 				nave.col++;
 			}
@@ -184,6 +200,63 @@ namespace naves
 			//if(nave.col>ANCHO-1)nave.col= ANCHO-1;
 			//if(nave.col<0)nave.col=0;
 		}
+
+		static void Render(Tunel tunel,Entidad nave) 
+		{
+			renderTunel(tunel);
+			if(nave.col > 0)
+			{
+				Console.BackgroundColor = ConsoleColor.DarkYellow;
+				Console.SetCursorPosition(nave.col * 2, nave.fil); // dibuja la nave
+				Console.Write("=>");
+			}
+		
+
+
+			if (DEBUG) 
+			{
+				Console.ResetColor();
+				Console.SetCursorPosition(0, 20);
+				Console.WriteLine("Columna Nave: " + nave.col);
+				Console.WriteLine("Fila Nave: " + nave.fil);
+
+				Console.WriteLine("Fil MIN: " + tunel.techo[tunel.ini]);
+				Console.WriteLine("Fil MAX: " + tunel.suelo[tunel.ini]);
+			}
+
+		}
+
+		static void GeneraEnemigo(ref GrEntidades enemigos,Tunel tunel) 
+		{
+			if (enemigos.num < MAX_ENEMIGOS) 
+			{
+				int probabilidad = rnd.Next(4);
+				if (probabilidad != 8)
+				{
+					Entidad newEnemy = new Entidad();
+					newEnemy.col = ANCHO - 1;
+					newEnemy.fil = rnd.Next(tunel.techo[tunel.ini], tunel.suelo[tunel.ini]);
+					AnhadeEntidad(newEnemy, ref enemigos);
+
+				}
+			}
+		}
+		static void AvanzaEnemigo (ref GrEntidades enemigos)
+		{
+			for(int i=0;i<enemigos.num;i++) 
+			{
+				if (enemigos.ent[i].col > 0)
+				{
+					enemigos.ent[i].col--;
+				}
+				else 
+				{
+					EliminaEntidad(i, ref enemigos);
+				}
+			}
+
+		}
+
 
 	
 		static char LeeInput()

@@ -41,8 +41,8 @@ namespace naves
 
 
 			GrEntidades enemigos= new GrEntidades();
-			enemigos.ent = new Entidad[] { };
-			enemigos.num= 1;
+			enemigos.ent = new Entidad[MAX_ENEMIGOS];
+			enemigos.num= 0;
 
 			
 
@@ -58,9 +58,13 @@ namespace naves
 				c = LeeInput();
 
 				
+					GeneraEnemigo(ref enemigos, tunel);
+				
+				
 				AvanzaTunel(ref tunel);
 				AvanzaNave(c, ref nave);
-				Render(tunel, nave);
+				AvanzaEnemigo(ref enemigos);
+				Render(tunel, nave,enemigos);
 			
 				Thread.Sleep(200);
 			}
@@ -146,15 +150,16 @@ namespace naves
 				}
 				indicador = (indicador + 1) % ANCHO;
 			}
-			Console.BackgroundColor = ConsoleColor.Black;
-			
+			Console.ResetColor();
+
+
 		}
 		static void AnhadeEntidad(Entidad ent , ref GrEntidades gr) 
 		{
 			//Pasamos por referencia ya que modificamos el número dentro de la estructura gr.
 			if (gr.num < MAX_BALAS + MAX_ENEMIGOS + 1) 
 			{
-				gr.ent[gr.num] = ent;
+				gr.ent[gr.num] = ent;			//ERROR
 				gr.num++;
 			}
 			else
@@ -169,7 +174,7 @@ namespace naves
 			//Va por referencia ya que modificamos el int que tiene el struct
 			if (gr.num > 0) 
 			{
-				gr.ent[i] = gr.ent[gr.num];
+				gr.ent[i] = gr.ent[gr.num];					//intetamos acceder a gr.num == 9; por eso da error en el array.
 				gr.num--;
 			}
 		}
@@ -201,24 +206,37 @@ namespace naves
 			//if(nave.col<0)nave.col=0;
 		}
 
-		static void Render(Tunel tunel,Entidad nave) 
+		static void Render(Tunel tunel,Entidad nave, GrEntidades enemigos) 
 		{
 			renderTunel(tunel);
+
+			
 			if(nave.col > 0)
 			{
 				Console.BackgroundColor = ConsoleColor.DarkYellow;
 				Console.SetCursorPosition(nave.col * 2, nave.fil); // dibuja la nave
 				Console.Write("=>");
+				Console.ResetColor();
+
 			}
-		
+			for (int i=0;i<enemigos.num;i++) 
+			{
+				Console.BackgroundColor = ConsoleColor.Black;
+				Console.SetCursorPosition(enemigos.ent[i].col * 2, enemigos.ent[i].fil); // dibuja la nave
+				Console.Write("<>");
+				Console.ResetColor();
+
+			}
+
+
 
 
 			if (DEBUG) 
 			{
 				Console.ResetColor();
 				Console.SetCursorPosition(0, 20);
-				Console.WriteLine("Columna Nave: " + nave.col);
-				Console.WriteLine("Fila Nave: " + nave.fil);
+				Console.WriteLine("Columna Nave: " + enemigos.ent[0].col);
+				Console.WriteLine("Fila Nave: " + enemigos.ent[0].fil);
 
 				Console.WriteLine("Fil MIN: " + tunel.techo[tunel.ini]);
 				Console.WriteLine("Fil MAX: " + tunel.suelo[tunel.ini]);
@@ -231,17 +249,16 @@ namespace naves
 			if (enemigos.num < MAX_ENEMIGOS) 
 			{
 				int probabilidad = rnd.Next(4);
-				if (probabilidad != 8)
+				if (probabilidad == 0)
 				{
 					Entidad newEnemy = new Entidad();
-					newEnemy.col = ANCHO - 1;
-					newEnemy.fil = rnd.Next(tunel.techo[tunel.ini], tunel.suelo[tunel.ini]);
+					newEnemy.col = ANCHO-1 ;
+					newEnemy.fil = rnd.Next(tunel.techo[tunel.ini]+1, tunel.suelo[tunel.ini]-1);	//Fallos
 					AnhadeEntidad(newEnemy, ref enemigos);
-
 				}
 			}
 		}
-		static void AvanzaEnemigo (ref GrEntidades enemigos)
+		static void AvanzaEnemigo (ref GrEntidades enemigos)				//Bien
 		{
 			for(int i=0;i<enemigos.num;i++) 
 			{

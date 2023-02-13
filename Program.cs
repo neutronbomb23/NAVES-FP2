@@ -56,17 +56,21 @@ namespace naves
 			{
 				char c = ' ';
 				c = LeeInput();
-
-				
-					GeneraEnemigo(ref enemigos, tunel);
-				
-				
 				AvanzaTunel(ref tunel);
-				AvanzaNave(c, ref nave);
+
+				GeneraEnemigo(ref enemigos, tunel);
+
 				AvanzaEnemigo(ref enemigos);
+
+				AvanzaNave(c, ref nave);
+				
 				Render(tunel, nave,enemigos);
 			
-				Thread.Sleep(200);
+				Thread.Sleep(100);
+
+
+				Console.SetCursorPosition(0, 26);
+				Console.WriteLine("Columna Nave: " + enemigos.num);
 			}
 		}
 
@@ -172,7 +176,7 @@ namespace naves
 		static void EliminaEntidad(int i, ref GrEntidades gr) 
 		{
 			//Va por referencia ya que modificamos el int que tiene el struct
-			if (gr.num > 0) 
+			if (gr.num > 0 )				//lo de < que 9 es raro
 			{
 				gr.ent[i] = gr.ent[gr.num];					//intetamos acceder a gr.num == 9; por eso da error en el array.
 				gr.num--;
@@ -222,10 +226,13 @@ namespace naves
 			for (int i=0;i<enemigos.num;i++) 
 			{
 				Console.BackgroundColor = ConsoleColor.Black;
-				Console.SetCursorPosition(enemigos.ent[i].col * 2, enemigos.ent[i].fil); // dibuja la nave
-				Console.Write("<>");
-				Console.ResetColor();
-
+				if (enemigos.ent[i].col >0) 
+				{
+					Console.SetCursorPosition(enemigos.ent[i].col * 2, enemigos.ent[i].fil); // dibuja la nave
+					Console.Write("<>");
+					Console.ResetColor();
+				}
+			
 			}
 
 
@@ -246,14 +253,19 @@ namespace naves
 
 		static void GeneraEnemigo(ref GrEntidades enemigos,Tunel tunel) 
 		{
-			if (enemigos.num < MAX_ENEMIGOS) 
+			if (enemigos.num < MAX_ENEMIGOS-1) 
 			{
 				int probabilidad = rnd.Next(4);
 				if (probabilidad == 0)
 				{
 					Entidad newEnemy = new Entidad();
 					newEnemy.col = ANCHO-1 ;
-					newEnemy.fil = rnd.Next(tunel.techo[tunel.ini]+1, tunel.suelo[tunel.ini]-1);	//Fallos
+					newEnemy.fil = rnd.Next(tunel.techo[tunel.ini]+1, tunel.suelo[tunel.ini]-1);    //Fallos
+
+					Console.ResetColor();
+					Console.SetCursorPosition(0, 25);
+					Console.WriteLine("Columna NaveS: " + newEnemy.fil);
+
 					AnhadeEntidad(newEnemy, ref enemigos);
 				}
 			}
@@ -262,7 +274,7 @@ namespace naves
 		{
 			for(int i=0;i<enemigos.num;i++) 
 			{
-				if (enemigos.ent[i].col > 0)
+				if (enemigos.ent[i].col >= 0)
 				{
 					enemigos.ent[i].col--;
 				}

@@ -2,6 +2,7 @@
 using System;
 using System.Threading;
 using System.Diagnostics;
+using System.Text;
 
 
 namespace naves
@@ -44,7 +45,11 @@ namespace naves
 			enemigos.ent = new Entidad[MAX_ENEMIGOS];
 			enemigos.num= 0;
 
-			
+			GrEntidades balas = new GrEntidades();
+			balas.ent = new Entidad[MAX_BALAS];
+			balas.num = 0;
+
+
 
 			nave.col = ANCHO / 2;
 			nave.fil = ALTO / 2;
@@ -63,13 +68,19 @@ namespace naves
 				AvanzaEnemigo(ref enemigos);
 
 				AvanzaNave(c, ref nave);
-				
-				Render(tunel, nave,enemigos);
-			
-				Thread.Sleep(100);
+				if (c == 'x') 
+				{
+					  GeneraBala(balas, nave);
+				}
 
+				AvanzaBalas(balas);
+			
+				Render(tunel, nave,enemigos,balas);
+			
+				Thread.Sleep(20);
 
 				Console.SetCursorPosition(0, 26);
+
 				Console.WriteLine("Columna Nave: " + enemigos.num);
 			}
 		}
@@ -178,7 +189,7 @@ namespace naves
 			//Va por referencia ya que modificamos el int que tiene el struct
 			if (gr.num > 0 )				//lo de < que 9 es raro
 			{
-				gr.ent[i] = gr.ent[gr.num];					//intetamos acceder a gr.num == 9; por eso da error en el array.
+				gr.ent[i] = gr.ent[gr.num-1];			//Num es siempre vacio					//intetamos acceder a gr.num == 9; por eso da error en el array.
 				gr.num--;
 			}
 		}
@@ -210,33 +221,39 @@ namespace naves
 			//if(nave.col<0)nave.col=0;
 		}
 
-		static void Render(Tunel tunel,Entidad nave, GrEntidades enemigos) 
+		static void Render(Tunel tunel,Entidad nave, GrEntidades enemigos,GrEntidades balas) 
 		{
-			renderTunel(tunel);
 
-			
+		
+			renderTunel(tunel);
 			if(nave.col > 0)
 			{
 				Console.BackgroundColor = ConsoleColor.DarkYellow;
-				Console.SetCursorPosition(nave.col * 2, nave.fil); // dibuja la nave
+				Console.SetCursorPosition(nave.col * 2, nave.fil);			 // dibuja la nave
 				Console.Write("=>");
 				Console.ResetColor();
-
 			}
 			for (int i=0;i<enemigos.num;i++) 
 			{
 				Console.BackgroundColor = ConsoleColor.Black;
 				if (enemigos.ent[i].col >0) 
 				{
-					Console.SetCursorPosition(enemigos.ent[i].col * 2, enemigos.ent[i].fil); // dibuja la nave
+					Console.SetCursorPosition(enemigos.ent[i].col * 2, enemigos.ent[i].fil);
 					Console.Write("<>");
 					Console.ResetColor();
 				}
-			
 			}
 
-
-
+			for(int i = 0; i < balas.num; i++) 
+			{
+				Console.BackgroundColor = ConsoleColor.Magenta;
+				if (balas.ent[i].col < ANCHO-1)
+				{
+					Console.SetCursorPosition(balas.ent[i].col * 2, balas.ent[i].fil);
+					Console.Write("->");
+					Console.ResetColor();
+				}
+			}
 
 			if (DEBUG) 
 			{
@@ -248,9 +265,7 @@ namespace naves
 				Console.WriteLine("Fil MIN: " + tunel.techo[tunel.ini]);
 				Console.WriteLine("Fil MAX: " + tunel.suelo[tunel.ini]);
 			}
-
 		}
-
 		static void GeneraEnemigo(ref GrEntidades enemigos,Tunel tunel) 
 		{
 			if (enemigos.num < MAX_ENEMIGOS-1) 
@@ -258,13 +273,9 @@ namespace naves
 				int probabilidad = rnd.Next(4);
 				if (probabilidad == 0)
 				{
-					Entidad newEnemy = new Entidad();
-					newEnemy.col = ANCHO-1 ;
-					newEnemy.fil = rnd.Next(tunel.techo[tunel.ini]+1, tunel.suelo[tunel.ini]-1);    //Fallos
-
-					Console.ResetColor();
-					Console.SetCursorPosition(0, 25);
-					Console.WriteLine("Columna NaveS: " + newEnemy.fil);
+					Entidad newEnemy = enemigos.ent[enemigos.num];          //aqui antes hacia new
+					newEnemy.col = ANCHO - 1;
+					newEnemy.fil = rnd.Next(tunel.techo[(tunel.ini-1+ANCHO)%ANCHO]+2, tunel.suelo[(tunel.ini - 1 + ANCHO) % ANCHO]-2);    //Fallos
 
 					AnhadeEntidad(newEnemy, ref enemigos);
 				}
@@ -272,22 +283,53 @@ namespace naves
 		}
 		static void AvanzaEnemigo (ref GrEntidades enemigos)				//Bien
 		{
-			for(int i=0;i<enemigos.num;i++) 
+			int i = 0;
+			while (i < enemigos.num )
 			{
 				if (enemigos.ent[i].col >= 0)
 				{
 					enemigos.ent[i].col--;
+					i = (i + 1) % ANCHO;
+
 				}
-				else 
+				else
 				{
 					EliminaEntidad(i, ref enemigos);
 				}
+				
 			}
-
+			
 		}
 
+		static void GeneraBala( GrEntidades balas, Entidad nave) 
+		{
+			if(balas.num<MAX_BALAS && nave.col < ANCHO - 1) 
+			{
+				Entidad newBullet = balas.ent[balas.num];          
+				newBullet.col = nave.col + 1;
+				newBullet.fil = nave.fil;						
+				AnhadeEntidad(newBullet, ref balas);
+			}
+		}
 
-	
+		static void AvanzaBalas(GrEntidades balas) 
+		{
+			int i = 0;
+			while (i < balas.num) 
+			{
+				if (balas.ent[i].col < ANCHO-1)
+				{
+					balas.ent[i].col--;
+					i = (i + 1) % ANCHO;
+
+				}
+				else
+				{
+					EliminaEntidad(i, ref balas);
+				}
+			}	
+		}
+
 		static char LeeInput()
 		{
 			char ch = ' ';

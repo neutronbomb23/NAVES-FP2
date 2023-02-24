@@ -77,8 +77,6 @@ namespace naves
 					{
 						GeneraBala(ref balas, nave);
 					}
-
-
 					AvanzaBalas(ref balas);
 
 					Colisiones(ref tunel, ref nave, ref balas, ref enemigos, ref colisiones);
@@ -92,9 +90,14 @@ namespace naves
 				for(int i = 0; i < colisiones.num; i++) 
 				{
 					EliminaEntidad(i, ref colisiones);
-				}	
-			
+				}
 			}
+			Console.ResetColor();
+			Console.SetCursorPosition(ANCHO / 2, ALTO / 2);
+			Console.BackgroundColor = ConsoleColor.Green;
+			Console.Write("HAS PERDIDO");
+			Console.SetCursorPosition(0, 26);
+			Console.ResetColor();
 		}
 
 
@@ -279,6 +282,7 @@ namespace naves
 				}
 			
 			}
+
 			Console.ResetColor();
 
 			if (DEBUG) 

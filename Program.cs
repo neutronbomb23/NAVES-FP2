@@ -38,11 +38,11 @@ namespace naves
 		{
 			Console.CursorVisible = false;
 
-
-			bool end = false;
 			Tunel tunel = new Tunel();
 			Entidad nave = new Entidad();
-
+			nave.col = ANCHO / 2;
+			nave.fil = ALTO / 2;
+			tunel.ini = 5;
 
 			GrEntidades enemigos= new GrEntidades();
 			enemigos.ent = new Entidad[MAX_ENEMIGOS];
@@ -57,12 +57,8 @@ namespace naves
 			colisiones.num = 0;
 
 			
-			nave.col = ANCHO / 2;
-			nave.fil = ALTO / 2;
-			tunel.ini = 5;
+			
 			IniciaTunel(out tunel);
-			renderTunel(tunel);
-			GeneraEnemigo(ref enemigos, tunel);
 			while (nave.col!=-1) 
 			{
 				char c = ' ';
@@ -91,17 +87,13 @@ namespace naves
 
 				Render(tunel, nave, enemigos, balas, colisiones);
 
-				
-				Thread.Sleep(120);
+				Thread.Sleep(50);
 
-				
 				for(int i = 0; i < colisiones.num; i++) 
 				{
 					EliminaEntidad(i, ref colisiones);
 				}	
-				Console.SetCursorPosition(0, 26);
-
-				Console.WriteLine("NumBalas: " + nave.col);
+			
 			}
 		}
 
@@ -157,12 +149,13 @@ namespace naves
 
 		static void renderTunel(Tunel tunel) 
 		{
-			int indicador = tunel.ini;
+			int indicador = tunel.ini;		//indicador será la columna a renderizar, y coincide con el indice del array circular
+
 			for (int c = 0; c < ANCHO; c++) //repasa cada columna
 			{
 				for (int f = 0; f < ALTO; f++) // cada fila
 				{
-					//Console.SetCursorPosition(15,0); // cambia el cursor a la siguiente columna
+				
 
 					Console.SetCursorPosition(2 * c, f); // cambia el cursor a la siguiente columna
 					if (f <= tunel.techo[indicador]) // desde 0 hasta el valor del techo pinta azul
@@ -181,7 +174,7 @@ namespace naves
 						Console.WriteLine("  ");
 					}
 				}
-				indicador = (indicador + 1) % ANCHO;
+				indicador = (indicador + 1) % ANCHO;			//aumentamos indicador
 			}
 			Console.ResetColor();
 
@@ -190,30 +183,30 @@ namespace naves
 		static void AnhadeEntidad(Entidad ent , ref GrEntidades gr) 
 		{
 			//Pasamos por referencia ya que modificamos el número dentro de la estructura gr.
-			if (gr.num < MAX_BALAS + MAX_ENEMIGOS + 1) 
+			//El máximo número de entidades posibles es la suma de las balas, enemigos y la nave
+			//Anadimos la entidad a la última posición posible del array
+			if (gr.num < MAX_BALAS + MAX_ENEMIGOS + 1)
 			{
-				gr.ent[gr.num] = ent;			//ERROR
+				gr.ent[gr.num] = ent;			
 				gr.num++;
-			}
-			else
-			{	
-				Console.SetCursorPosition(0, 20);
-				Console.WriteLine("No se pueden añadir más entidades");
 			}
 		}
 
 		static void EliminaEntidad(int i, ref GrEntidades gr) 
 		{
-			//Va por referencia ya que modificamos el int que tiene el struct
-			if (gr.num > 0 )				//lo de < que 9 es raro
+			//Va por referencia ya que modificamos el int que tiene el struct.
+			//Eliminamos la entidad, igualandola a la posición vacía y reduciendo el numero de unidades dentro del GrEntidades en uno.
+
+			if (gr.num > 0 )				
 			{
-				gr.ent[i] = gr.ent[gr.num-1];			//Num es siempre vacio					//intetamos acceder a gr.num == 9; por eso da error en el array.
+				gr.ent[i] = gr.ent[gr.num-1];			
 				gr.num--;
 			}
 		}
 
 		static void AvanzaNave(char ch, ref Entidad nave) 
 		{
+			//Casos posibles de movimiento de la nave		
 			if (ch == 'l' && nave.col > 0) 
 			{
 				nave.col--;
@@ -230,17 +223,15 @@ namespace naves
 			{
 				nave.fil++;
 			}
-
-			//Límites de la nave para que no se salga de pantalla
-			//if(nave.col>ANCHO-1)nave.col= ANCHO-1;
-			//if(nave.col<0)nave.col=0;
 		}
 
 		static void Render(Tunel tunel,Entidad nave, GrEntidades enemigos,GrEntidades balas, GrEntidades colisiones) 
 		{
 
-		
+			//Renderizamos el tunel
 			renderTunel(tunel);
+
+			//Renderizamos la nave en caso de que no haya chocado
 			if(nave.col > 0)
 			{
 				Console.BackgroundColor = ConsoleColor.DarkYellow;
@@ -248,8 +239,12 @@ namespace naves
 				Console.Write("=>");
 				Console.ResetColor();
 			}
+			
+			//Renderizamos los enemigos 
 			for (int i=0;i<enemigos.num;i++) 
 			{
+
+				//Comprobamos que la posición del enemigo sea valida, para ahorrarnos problemas
 				Console.BackgroundColor = ConsoleColor.Black;
 				if (enemigos.ent[i].col >0) 
 				{
@@ -259,6 +254,7 @@ namespace naves
 				}
 			}
 
+			//Renderizamos las balas
 			for(int i = 0; i < balas.num; i++) 
 			{
 				Console.BackgroundColor = ConsoleColor.Magenta;
@@ -269,9 +265,11 @@ namespace naves
 					Console.ResetColor();
 				}
 			}
+
+			//Renderizamos las colisiones
 			for (int i = 0; i < colisiones.num; i++) 
 			{
-				
+				//Comprobamos que la colisión sea valida
 				if (colisiones.ent[i].col>0 && colisiones.ent[i].fil > 0) 
 				{
 					Console.BackgroundColor = ConsoleColor.Magenta;
@@ -297,31 +295,39 @@ namespace naves
 
 		static void GeneraEnemigo(ref GrEntidades enemigos,Tunel tunel) 
 		{
+
+			//Generamos el enemigo en caso de que puedan haber más 
 			if (enemigos.num < MAX_ENEMIGOS-1) 
 			{
+				//Hay una probabilidad del 25% de que aparezca
 				int probabilidad = rnd.Next(4);
 				if (probabilidad == 0)
 				{
-					Entidad newEnemy = enemigos.ent[enemigos.num];          //aqui antes hacia new
+					//Creamos una entidad de tipo enemigo y le asignamos los parámetros pertinentes
+					Entidad newEnemy = enemigos.ent[enemigos.num];											//aqui antes hacia new
 					newEnemy.col = ANCHO - 1;
-					newEnemy.fil = rnd.Next(tunel.techo[(tunel.ini-1+ANCHO)%ANCHO]+2, tunel.suelo[(tunel.ini - 1 + ANCHO) % ANCHO]-2);    //Fallos
+					newEnemy.fil = rnd.Next(tunel.techo[(tunel.ini-1+ANCHO)%ANCHO]+2, tunel.suelo[(tunel.ini - 1 + ANCHO) % ANCHO]-2);   
 
+					//Anadimos la entidad a su grupo
 					AnhadeEntidad(newEnemy, ref enemigos);
 				}
 			}
 		}
 
-		static void AvanzaEnemigo (ref GrEntidades enemigos)				//Bien
+		static void AvanzaEnemigo(ref GrEntidades enemigos)			
 		{
 			int i = 0;
+			//Avanzamos los enemigos
 			while (i < enemigos.num )
 			{
+				//En caso de que pueda avanzar, lo hace
 				if (enemigos.ent[i].col >= 0)
 				{
 					enemigos.ent[i].col--;
 					i = (i + 1) % ANCHO;
 
 				}
+				//Si no puede avanzar (ha llegado al límite izquierdo) lo eliminamos
 				else
 				{
 					EliminaEntidad(i, ref enemigos);
@@ -333,6 +339,7 @@ namespace naves
 
 		static void GeneraBala( ref GrEntidades balas, Entidad nave) 
 		{
+			//Si se puede generar una bala, lo hace
 			if(balas.num<MAX_BALAS && nave.col < ANCHO - 1) 
 			{
 				Entidad newBullet = balas.ent[balas.num];          
@@ -345,6 +352,8 @@ namespace naves
 
 		static void AvanzaBalas(ref GrEntidades balas) 
 		{
+
+			//Avanzamos las balas de la misma manera que los enemigos
 			int i = 0;
 			while (i < balas.num) 
 			{
@@ -363,16 +372,20 @@ namespace naves
 
 		static void ColNaveTunel(Tunel tunel,ref Entidad nave, ref GrEntidades colisiones) 
 		{
+			//Indicador que lleva la cuenta de la columna a comprobar
 			int indicador = (nave.col+tunel.ini) % ANCHO;
 
-			if (nave.fil <= tunel.techo[indicador] || nave.fil >= tunel.suelo[indicador])             //comprueba si choca con el techo
+
+			//Comprobamos si choca ya sea con el techo o con el suelo
+			if (nave.fil <= tunel.techo[indicador] || nave.fil >= tunel.suelo[indicador])             
 			{
-				
+				//Creamos una entidad colisión y la añadimos
 				Entidad newColision = new Entidad();
 				newColision.col = nave.col;
 				newColision.fil= nave.fil;
 				AnhadeEntidad( newColision, ref colisiones);
 
+				//Por último, ponemos la columna de la nave a -1, ya que hemos perdido
 				nave.col = -1;
 			}
 
@@ -382,6 +395,7 @@ namespace naves
 
 		static void ColBalasTunel(ref Tunel tunel, ref GrEntidades balas, ref GrEntidades colisiones) 
 		{
+			//Recorremos el array de balas dentro del mismo grupo y comprobamos si colisionan con el tunel
 			for (int i = 0; i < balas.num; i++) 
 			{
 				//Los dos primeros condicionales comprueban si la bala choca con el tunel, cuando ambos coinciden en posición
@@ -410,28 +424,28 @@ namespace naves
 					AnhadeEntidad(newColision, ref colisiones);
 				}
 
-				//Mientras que los dos últimos, anticipan la colisión para que no se de el caso de que la bala salte un bloque.
-				else if (balas.ent[i].fil <= tunel.techo[(balas.ent[i].col + tunel.ini + 1) % ANCHO]) 
-				{
-					Entidad newColision = new Entidad();
-					newColision.col = balas.ent[i].col+1;
-					newColision.fil = balas.ent[i].fil;
-					EliminaEntidad(i, ref balas);
+				////Mientras que los dos últimos, anticipan la colisión para que no se de el caso de que la bala salte un bloque.
+				//else if (balas.ent[i].fil <= tunel.techo[(balas.ent[i].col + tunel.ini + 1) % ANCHO]) 
+				//{
+				//	Entidad newColision = new Entidad();
+				//	newColision.col = balas.ent[i].col+1;
+				//	newColision.fil = balas.ent[i].fil;
+				//	EliminaEntidad(i, ref balas);
 
-					tunel.techo[(balas.ent[i].col + tunel.ini + 1) % ANCHO] = balas.ent[i].fil - 1;
-					AnhadeEntidad(newColision, ref colisiones);
-				}
+				//	tunel.techo[(balas.ent[i].col + tunel.ini + 1) % ANCHO] = balas.ent[i].fil - 1;
+				//	AnhadeEntidad(newColision, ref colisiones);
+				//}
 
-				else if (balas.ent[i].fil >= tunel.suelo[(balas.ent[i].col + tunel.ini + 1) % ANCHO])
-				{
-					Entidad newColision = new Entidad();
-					newColision.col = balas.ent[i].col + 1;
-					newColision.fil = balas.ent[i].fil;
-					EliminaEntidad(i, ref balas);
+				//else if (balas.ent[i].fil >= tunel.suelo[(balas.ent[i].col + tunel.ini + 1) % ANCHO])
+				//{
+				//	Entidad newColision = new Entidad();
+				//	newColision.col = balas.ent[i].col + 1;
+				//	newColision.fil = balas.ent[i].fil;
+				//	EliminaEntidad(i, ref balas);
 
-					tunel.suelo[(balas.ent[i].col + tunel.ini+1 ) % ANCHO] = balas.ent[i].fil + 1;
-					AnhadeEntidad(newColision, ref colisiones);
-				}
+				//	tunel.suelo[(balas.ent[i].col + tunel.ini+1 ) % ANCHO] = balas.ent[i].fil + 1;
+				//	AnhadeEntidad(newColision, ref colisiones);
+				//}
 			}
 		}
 
@@ -476,6 +490,7 @@ namespace naves
 
 		static void Colisiones (ref Tunel tunel,ref Entidad nave, ref GrEntidades balas, ref GrEntidades enemigos, ref GrEntidades colisiones) 
 		{
+			//Encapsulamos todos los metodos de colisión en uno solo
 			ColNaveTunel(tunel, ref nave, ref colisiones);
 			ColBalasTunel(ref tunel, ref balas, ref colisiones);
 			ColNaveEnemigos(ref nave, ref enemigos, ref colisiones);

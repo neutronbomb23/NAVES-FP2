@@ -3,7 +3,7 @@ using System;
 using System.Threading;
 using System.Diagnostics;
 using System.Text;
-
+using System.Drawing;
 
 namespace naves
 {
@@ -37,6 +37,9 @@ namespace naves
 		static void Main() 
 		{
 			Console.CursorVisible = false;
+
+
+			bool end = false;
 			Tunel tunel = new Tunel();
 			Entidad nave = new Entidad();
 
@@ -49,44 +52,59 @@ namespace naves
 			balas.ent = new Entidad[MAX_BALAS];
 			balas.num = 0;
 
+			GrEntidades colisiones = new GrEntidades();
+			colisiones.ent = new Entidad[MAX_BALAS + 1];
+			colisiones.num = 0;
 
-
+			
 			nave.col = ANCHO / 2;
 			nave.fil = ALTO / 2;
 			tunel.ini = 5;
 			IniciaTunel(out tunel);
 			renderTunel(tunel);
 			GeneraEnemigo(ref enemigos, tunel);
-			while (true) 
+			while (nave.col!=-1) 
 			{
 				char c = ' ';
 				c = LeeInput();
+
 				AvanzaTunel(ref tunel);
 
 				GeneraEnemigo(ref enemigos, tunel);
 
 				AvanzaEnemigo(ref enemigos);
-
-				AvanzaNave(c, ref nave);
-				if (c == 'x') 
+				Colisiones(ref tunel, ref nave, ref balas, ref enemigos, ref colisiones);
+				if (nave.col != 1) 
 				{
-					  GeneraBala(balas, nave);
+					AvanzaNave(c, ref nave);
+					if (c == 'x')
+					{
+						GeneraBala(ref balas, nave);
+					}
+
+
+					AvanzaBalas(ref balas);
+
+					Colisiones(ref tunel, ref nave, ref balas, ref enemigos, ref colisiones);
+				
 				}
 
-				AvanzaBalas(balas);
-			
-				Render(tunel, nave,enemigos,balas);
-			
-				Thread.Sleep(20);
+				Render(tunel, nave, enemigos, balas, colisiones);
 
+				
+				Thread.Sleep(120);
+
+				
+				for(int i = 0; i < colisiones.num; i++) 
+				{
+					EliminaEntidad(i, ref colisiones);
+				}	
 				Console.SetCursorPosition(0, 26);
 
-				Console.WriteLine("Columna Nave: " + enemigos.num);
+				Console.WriteLine("NumBalas: " + nave.col);
 			}
 		}
 
-
-			
 
 		static void IniciaTunel(out Tunel tunel)
 		{
@@ -194,9 +212,6 @@ namespace naves
 			}
 		}
 
-
-
-		
 		static void AvanzaNave(char ch, ref Entidad nave) 
 		{
 			if (ch == 'l' && nave.col > 0) 
@@ -221,7 +236,7 @@ namespace naves
 			//if(nave.col<0)nave.col=0;
 		}
 
-		static void Render(Tunel tunel,Entidad nave, GrEntidades enemigos,GrEntidades balas) 
+		static void Render(Tunel tunel,Entidad nave, GrEntidades enemigos,GrEntidades balas, GrEntidades colisiones) 
 		{
 
 		
@@ -249,11 +264,24 @@ namespace naves
 				Console.BackgroundColor = ConsoleColor.Magenta;
 				if (balas.ent[i].col < ANCHO-1)
 				{
-					Console.SetCursorPosition(balas.ent[i].col * 2, balas.ent[i].fil);
-					Console.Write("->");
+					Console.SetCursorPosition(balas.ent[i].col * 2 , balas.ent[i].fil);
+					Console.Write("--");
 					Console.ResetColor();
 				}
 			}
+			for (int i = 0; i < colisiones.num; i++) 
+			{
+				
+				if (colisiones.ent[i].col>0 && colisiones.ent[i].fil > 0) 
+				{
+					Console.BackgroundColor = ConsoleColor.Magenta;
+					Console.SetCursorPosition(colisiones.ent[i].col * 2, colisiones.ent[i].fil);
+					Console.Write("=*");
+					Console.ResetColor();
+				}
+			
+			}
+			Console.ResetColor();
 
 			if (DEBUG) 
 			{
@@ -266,6 +294,7 @@ namespace naves
 				Console.WriteLine("Fil MAX: " + tunel.suelo[tunel.ini]);
 			}
 		}
+
 		static void GeneraEnemigo(ref GrEntidades enemigos,Tunel tunel) 
 		{
 			if (enemigos.num < MAX_ENEMIGOS-1) 
@@ -281,6 +310,7 @@ namespace naves
 				}
 			}
 		}
+
 		static void AvanzaEnemigo (ref GrEntidades enemigos)				//Bien
 		{
 			int i = 0;
@@ -298,10 +328,10 @@ namespace naves
 				}
 				
 			}
-			
 		}
 
-		static void GeneraBala( GrEntidades balas, Entidad nave) 
+
+		static void GeneraBala( ref GrEntidades balas, Entidad nave) 
 		{
 			if(balas.num<MAX_BALAS && nave.col < ANCHO - 1) 
 			{
@@ -312,14 +342,15 @@ namespace naves
 			}
 		}
 
-		static void AvanzaBalas(GrEntidades balas) 
+
+		static void AvanzaBalas(ref GrEntidades balas) 
 		{
 			int i = 0;
 			while (i < balas.num) 
 			{
-				if (balas.ent[i].col < ANCHO-1)
+				if (balas.ent[i].col < ANCHO)
 				{
-					balas.ent[i].col--;
+					balas.ent[i].col++;
 					i = (i + 1) % ANCHO;
 
 				}
@@ -330,6 +361,128 @@ namespace naves
 			}	
 		}
 
+		static void ColNaveTunel(Tunel tunel,ref Entidad nave, ref GrEntidades colisiones) 
+		{
+			int indicador = (nave.col+tunel.ini) % ANCHO;
+
+			if (nave.fil <= tunel.techo[indicador] || nave.fil >= tunel.suelo[indicador])             //comprueba si choca con el techo
+			{
+				
+				Entidad newColision = new Entidad();
+				newColision.col = nave.col;
+				newColision.fil= nave.fil;
+				AnhadeEntidad( newColision, ref colisiones);
+
+				nave.col = -1;
+			}
+
+			
+
+		}
+
+		static void ColBalasTunel(ref Tunel tunel, ref GrEntidades balas, ref GrEntidades colisiones) 
+		{
+			for (int i = 0; i < balas.num; i++) 
+			{
+				//Los dos primeros condicionales comprueban si la bala choca con el tunel, cuando ambos coinciden en posición
+				if (balas.ent[i].fil <= tunel.techo[(balas.ent[i].col + tunel.ini) % ANCHO])
+				{
+
+					Entidad newColision = new Entidad();
+					newColision.col = balas.ent[i].col;
+					newColision.fil = balas.ent[i].fil;
+					EliminaEntidad(i, ref balas);
+
+					tunel.techo[(balas.ent[i].col + tunel.ini)%ANCHO] = balas.ent[i].fil - 1;
+					
+					AnhadeEntidad(newColision, ref colisiones);
+				}
+
+				else if (balas.ent[i].fil >= tunel.suelo[(balas.ent[i].col + tunel.ini) % ANCHO])
+				{
+
+					Entidad newColision = new Entidad();
+					newColision.col = balas.ent[i].col;
+					newColision.fil = balas.ent[i].fil;
+
+					EliminaEntidad(i, ref balas);
+					tunel.suelo[(balas.ent[i].col + tunel.ini) % ANCHO] = balas.ent[i].fil + 1 ;
+					AnhadeEntidad(newColision, ref colisiones);
+				}
+
+				//Mientras que los dos últimos, anticipan la colisión para que no se de el caso de que la bala salte un bloque.
+				else if (balas.ent[i].fil <= tunel.techo[(balas.ent[i].col + tunel.ini + 1) % ANCHO]) 
+				{
+					Entidad newColision = new Entidad();
+					newColision.col = balas.ent[i].col+1;
+					newColision.fil = balas.ent[i].fil;
+					EliminaEntidad(i, ref balas);
+
+					tunel.techo[(balas.ent[i].col + tunel.ini + 1) % ANCHO] = balas.ent[i].fil - 1;
+					AnhadeEntidad(newColision, ref colisiones);
+				}
+
+				else if (balas.ent[i].fil >= tunel.suelo[(balas.ent[i].col + tunel.ini + 1) % ANCHO])
+				{
+					Entidad newColision = new Entidad();
+					newColision.col = balas.ent[i].col + 1;
+					newColision.fil = balas.ent[i].fil;
+					EliminaEntidad(i, ref balas);
+
+					tunel.suelo[(balas.ent[i].col + tunel.ini+1 ) % ANCHO] = balas.ent[i].fil + 1;
+					AnhadeEntidad(newColision, ref colisiones);
+				}
+			}
+		}
+
+
+		static void ColNaveEnemigos(ref Entidad nave, ref GrEntidades enemigos, ref GrEntidades colisiones) 
+		{
+			//Recorremos el grupo de entidades de los enemigos y comprobamos si uno de ellos tiene la misma columna y fila que la nave
+			for(int i = 0; i < enemigos.num; i++) 
+			{
+				if(nave.col == enemigos.ent[i].col && nave.fil == enemigos.ent[i].fil) 
+				{
+					Entidad newColision = new Entidad();
+					newColision.col = nave.col;
+					newColision.fil = nave.fil;
+					AnhadeEntidad(newColision, ref colisiones);
+					nave.col = -1;
+				
+				}
+			}
+		}
+
+		static void ColBalasEnemigos(ref GrEntidades balas, ref GrEntidades enemigos, ref GrEntidades colisiones)
+		{
+			//Recorremos los grupos de entidades de las balas y de los enemigos, si una bala choca con un enemigo, eliminamos ambos y anadimos una colisión
+			for (int i = 0; i < balas.num; i++) 
+			{
+				for(int j = 0; j < enemigos.num; j++) 
+				{
+					if (balas.ent[i].col == enemigos.ent[j].col && balas.ent[i].fil == enemigos.ent[j].fil)
+					{
+						EliminaEntidad(j, ref enemigos);
+						EliminaEntidad(i, ref balas);
+
+						Entidad newColision = new Entidad();
+						newColision.col = balas.ent[i].col;
+						newColision.fil = balas.ent[i].fil;
+						AnhadeEntidad(newColision, ref colisiones);
+					}
+				}
+			}
+		}
+
+		static void Colisiones (ref Tunel tunel,ref Entidad nave, ref GrEntidades balas, ref GrEntidades enemigos, ref GrEntidades colisiones) 
+		{
+			ColNaveTunel(tunel, ref nave, ref colisiones);
+			ColBalasTunel(ref tunel, ref balas, ref colisiones);
+			ColNaveEnemigos(ref nave, ref enemigos, ref colisiones);
+			ColBalasEnemigos(ref balas, ref enemigos, ref colisiones);
+		}
+
+		
 		static char LeeInput()
 		{
 			char ch = ' ';

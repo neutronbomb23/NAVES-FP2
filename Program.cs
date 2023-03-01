@@ -3,14 +3,15 @@ using System;
 using System.Threading;
 using System.Diagnostics;
 using System.Text;
+using System.IO;
 using System.Drawing;
 
 namespace naves
 {
+
 	class Program
 	{
 		static Random rnd = new Random(); // un único generador de aleaotorios para todo el programa
-
 		const bool DEBUG = true; // para sacar información adicional en el Render
 
 		const int ANCHO = 27, ALTO = 15,  // área de juego
@@ -33,8 +34,63 @@ namespace naves
 			public int num;
 		}
 
-		
-		static void Main() 
+        static void guarda(Entidad nave, GrEntidades balas, Tunel tunel, GrEntidades enemigos)
+        {
+
+            StreamWriter salida = new StreamWriter("saved.txt");
+            salida.WriteLine(nave.col + " " + nave.fil);
+
+            for (int j = 0; j < MAX_BALAS; j++)
+            {
+				salida.WriteLine(balas.ent[j].col + " " + balas.ent[j].fil);
+            }
+            for (int e = 0; e < MAX_ENEMIGOS; e++)
+            {
+                salida.WriteLine(enemigos.ent[e].col + " " + enemigos.ent[e].fil);
+            }
+            for (int k = 0; k < ANCHO; k++)
+			{
+				salida.WriteLine(tunel.suelo[k] + " " + tunel.techo[k]);
+            }
+				salida.WriteLine(tunel.ini);
+                salida.Close();
+        }
+
+		static void carga(Entidad nave, GrEntidades balas, Tunel tunel, GrEntidades enemigos)
+		{
+
+			StreamReader entrada = new StreamReader("saved.txt");
+			int i = 0;
+			string[] elCocheDeOscar = new string[2];
+			elCocheDeOscar = entrada.ReadLine().Split(' ');
+
+            for (int j = 0; j < MAX_BALAS; j++)
+            {
+                elCocheDeOscar = entrada.ReadLine().Split(' ');
+				balas.ent[j].col = int.Parse(elCocheDeOscar[0]);
+                balas.ent[j].fil = int.Parse(elCocheDeOscar[1]);
+            }
+            for (int e = 0; e < MAX_ENEMIGOS; e++)
+            {
+                elCocheDeOscar = entrada.ReadLine().Split(' ');
+                enemigos.ent[e].col = int.Parse(elCocheDeOscar[0]);
+                enemigos.ent[e].fil = int.Parse(elCocheDeOscar[1]);
+               
+            }
+            for (int k = 0; k < ANCHO; k++)
+            {
+                elCocheDeOscar = entrada.ReadLine().Split(' ');
+				tunel.suelo[k] = int.Parse(elCocheDeOscar[0]);
+                tunel.techo[k] = int.Parse(elCocheDeOscar[1]);
+				
+            }
+
+			tunel.ini = int.Parse(entrada.ReadLine());
+            entrada.Close();
+        }
+
+
+        static void Main() 
 		{
 			Console.CursorVisible = false;
 
@@ -63,13 +119,14 @@ namespace naves
 			{
 				char c = ' ';
 				c = LeeInput();
-
-				AvanzaTunel(ref tunel);
+				
+                AvanzaTunel(ref tunel);
 
 				GeneraEnemigo(ref enemigos, tunel);
 
 				AvanzaEnemigo(ref enemigos);
 				Colisiones(ref tunel, ref nave, ref balas, ref enemigos, ref colisiones);
+
 				if (nave.col != 1) 
 				{
 					AvanzaNave(c, ref nave);
@@ -80,16 +137,25 @@ namespace naves
 					AvanzaBalas(ref balas);
 
 					Colisiones(ref tunel, ref nave, ref balas, ref enemigos, ref colisiones);
-				
-				}
+					if (c == 'g')
+					{
+						guarda(nave, balas, tunel, enemigos);
+					}
+                    if (c == 'h')
+                    {
+                       carga(nave, balas, tunel, enemigos);
+                    }
 
-				Render(tunel, nave, enemigos, balas, colisiones);
+                }
+               
+                Render(tunel, nave, enemigos, balas, colisiones);
 
 				Thread.Sleep(50);
 
 				for(int i = 0; i < colisiones.num; i++) 
 				{
-					EliminaEntidad(i, ref colisiones);
+                   
+                    EliminaEntidad(i, ref colisiones);
 				}
 			}
 			Console.ResetColor();
@@ -98,6 +164,7 @@ namespace naves
 			Console.Write("HAS PERDIDO");
 			Console.SetCursorPosition(0, 26);
 			Console.ResetColor();
+			
 		}
 
 
@@ -501,7 +568,6 @@ namespace naves
 			ColBalasEnemigos(ref balas, ref enemigos, ref colisiones);
 		}
 
-		
 		static char LeeInput()
 		{
 			char ch = ' ';
@@ -513,8 +579,10 @@ namespace naves
 				else if (dir == "W" || dir == "UpArrow") ch = 'u';
 				else if (dir == "S" || dir == "DownArrow") ch = 'd';
 				else if (dir == "X" || dir == "Spacebar") ch = 'x'; // bala        
-				else if (dir == "P") ch = 'p'; // pausa					
-				else if (dir == "Q" || dir == "Escape") ch = 'q'; // salir
+				else if (dir == "P") ch = 'p'; // pausa	
+                else if (dir == "G") ch = 'g'; // pausa	
+                else if (dir == "H") ch = 'h'; // pausa							
+                else if (dir == "Q" || dir == "Escape") ch = 'q'; // salir
 				while (Console.KeyAvailable) Console.ReadKey();
 			}
 			return ch;

@@ -71,12 +71,7 @@ namespace naves
 			StreamReader entrada = new StreamReader("saved.txt");
 			string[] linea = new string[2];
 			linea = entrada.ReadLine().Split(' ');
-
-
-
 			balas.num = int.Parse(entrada.ReadLine());
-         
-
 
             for (int j = 0; j < balas.num; j++)
             {
@@ -176,7 +171,7 @@ namespace naves
                
                 Render(tunel, nave, enemigos, balas, colisiones);
 
-				Thread.Sleep(150);
+				Thread.Sleep(300);
 
 				for(int i = 0; i < colisiones.num; i++) 
 				{
@@ -536,7 +531,6 @@ namespace naves
 					newColision.fil = nave.fil;
 					AnhadeEntidad(newColision, ref colisiones);
 					nave.col = -1;
-				
 				}
 			}
 		}

@@ -1,4 +1,5 @@
-﻿// using ...
+﻿//Francisco Miguel Galvan Muñoz
+//Dorjee Khampa Herrezuelo Blasco
 using System;
 using System.Threading;
 using System.Diagnostics;
@@ -40,14 +41,22 @@ namespace naves
             StreamWriter salida = new StreamWriter("saved.txt");
             salida.WriteLine(nave.col + " " + nave.fil);
 
-            for (int j = 0; j < MAX_BALAS; j++)
+
+
+			salida.WriteLine(balas.num);
+            for (int j = 0; j < balas.num; j++)
             {
 				salida.WriteLine(balas.ent[j].col + " " + balas.ent[j].fil);
             }
-            for (int e = 0; e < MAX_ENEMIGOS; e++)
+
+
+            salida.WriteLine(enemigos.num);
+            for (int e = 0; e < enemigos.num; e++)
             {
                 salida.WriteLine(enemigos.ent[e].col + " " + enemigos.ent[e].fil);
             }
+
+
             for (int k = 0; k < ANCHO; k++)
 			{
 				salida.WriteLine(tunel.suelo[k] + " " + tunel.techo[k]);
@@ -56,32 +65,43 @@ namespace naves
                 salida.Close();
         }
 
-		static void carga(Entidad nave, GrEntidades balas, Tunel tunel, GrEntidades enemigos)
+		static void carga(Entidad nave, ref GrEntidades balas, Tunel tunel, ref GrEntidades enemigos)
 		{
 
 			StreamReader entrada = new StreamReader("saved.txt");
-			int i = 0;
-			string[] elCocheDeOscar = new string[2];
-			elCocheDeOscar = entrada.ReadLine().Split(' ');
+			string[] linea = new string[2];
+			linea = entrada.ReadLine().Split(' ');
 
-            for (int j = 0; j < MAX_BALAS; j++)
+
+
+			balas.num = int.Parse(entrada.ReadLine());
+         
+
+
+            for (int j = 0; j < balas.num; j++)
             {
-                elCocheDeOscar = entrada.ReadLine().Split(' ');
-				balas.ent[j].col = int.Parse(elCocheDeOscar[0]);
-                balas.ent[j].fil = int.Parse(elCocheDeOscar[1]);
+                linea = entrada.ReadLine().Split(' ');
+				balas.ent[j].col = int.Parse(linea[0]);
+                balas.ent[j].fil = int.Parse(linea[1]);
             }
-            for (int e = 0; e < MAX_ENEMIGOS; e++)
+
+
+
+            enemigos.num = int.Parse(entrada.ReadLine());
+         
+
+            for (int e = 0; e < enemigos.num; e++)
             {
-                elCocheDeOscar = entrada.ReadLine().Split(' ');
-                enemigos.ent[e].col = int.Parse(elCocheDeOscar[0]);
-                enemigos.ent[e].fil = int.Parse(elCocheDeOscar[1]);
+                linea = entrada.ReadLine().Split(' ');
+                enemigos.ent[e].col = int.Parse(linea[0]);
+                enemigos.ent[e].fil = int.Parse(linea[1]);
                
             }
             for (int k = 0; k < ANCHO; k++)
             {
-                elCocheDeOscar = entrada.ReadLine().Split(' ');
-				tunel.suelo[k] = int.Parse(elCocheDeOscar[0]);
-                tunel.techo[k] = int.Parse(elCocheDeOscar[1]);
+                linea = entrada.ReadLine().Split(' ');
+				tunel.suelo[k] = int.Parse(linea[0]);
+                tunel.techo[k] = int.Parse(linea[1]);
 				
             }
 
@@ -115,6 +135,15 @@ namespace naves
 			
 			
 			IniciaTunel(out tunel);
+			Console.WriteLine("Pulse H para cargar partida.");
+
+			char s = char.Parse(Console.ReadLine());
+			if (s == 'H' || s == 'h') 
+			{
+                
+                    carga(nave, ref balas, tunel, ref enemigos);
+                
+            }
 			while (nave.col!=-1) 
 			{
 				char c = ' ';
@@ -141,16 +170,13 @@ namespace naves
 					{
 						guarda(nave, balas, tunel, enemigos);
 					}
-                    if (c == 'h')
-                    {
-                       carga(nave, balas, tunel, enemigos);
-                    }
+                
 
                 }
                
                 Render(tunel, nave, enemigos, balas, colisiones);
 
-				Thread.Sleep(50);
+				Thread.Sleep(150);
 
 				for(int i = 0; i < colisiones.num; i++) 
 				{
@@ -494,29 +520,6 @@ namespace naves
 					tunel.suelo[(balas.ent[i].col + tunel.ini) % ANCHO] = balas.ent[i].fil + 1 ;
 					AnhadeEntidad(newColision, ref colisiones);
 				}
-
-				////Mientras que los dos últimos, anticipan la colisión para que no se de el caso de que la bala salte un bloque.
-				//else if (balas.ent[i].fil <= tunel.techo[(balas.ent[i].col + tunel.ini + 1) % ANCHO]) 
-				//{
-				//	Entidad newColision = new Entidad();
-				//	newColision.col = balas.ent[i].col+1;
-				//	newColision.fil = balas.ent[i].fil;
-				//	EliminaEntidad(i, ref balas);
-
-				//	tunel.techo[(balas.ent[i].col + tunel.ini + 1) % ANCHO] = balas.ent[i].fil - 1;
-				//	AnhadeEntidad(newColision, ref colisiones);
-				//}
-
-				//else if (balas.ent[i].fil >= tunel.suelo[(balas.ent[i].col + tunel.ini + 1) % ANCHO])
-				//{
-				//	Entidad newColision = new Entidad();
-				//	newColision.col = balas.ent[i].col + 1;
-				//	newColision.fil = balas.ent[i].fil;
-				//	EliminaEntidad(i, ref balas);
-
-				//	tunel.suelo[(balas.ent[i].col + tunel.ini+1 ) % ANCHO] = balas.ent[i].fil + 1;
-				//	AnhadeEntidad(newColision, ref colisiones);
-				//}
 			}
 		}
 
